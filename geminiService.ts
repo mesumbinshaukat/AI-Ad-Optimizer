@@ -1,0 +1,107 @@
+
+import { GoogleGenAI, Type } from "@google/genai";
+import { CampaignData, GenerationResult } from "./types";
+
+export const generateAdCopy = async (data: CampaignData): Promise<GenerationResult> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  const model = 'gemini-3-pro-preview';
+  
+  const prompt = `
+    Perform an exhaustive market intelligence search and generate 3 conversion-focused ad options.
+    
+    CRITICAL INSTRUCTION FOR COPYWRITING (HUMAN-ONLY STYLE):
+    - Do NOT use em-dashes (—). Use periods, commas, or line breaks.
+    - Do NOT use typical AI "hype" words like: Unlock, Unleash, Discover, Elevate, Transform, Revolutionize, Comprehensive, Dynamic.
+    - Use a raw, genuine, human voice. Write like a high-performing marketer who knows the customer's pain points personally. 
+    - Keep sentences varied in length. Use conversational transitions.
+    - Each ad option MUST revolve around a single 'Focus Keyword' or psychological trigger.
+
+    LOCAL RESEARCH TASK:
+    - Search for high-intent areas in ${data.city}, ${data.country} relevant to ${data.targetAudience}.
+    - Find specific neighborhoods, sub-sectors, and posh or commercial hubs (e.g., if Karachi, search for specific phases in DHA, specific blocks in North Nazimabad, etc.).
+    - Identify actual local competitors currently operating in ${data.city} for "${data.productDescription}". Analyze their visible hook or selling point.
+
+    CAMPAIGN PARAMETERS:
+    Business: ${data.businessName}
+    Product: ${data.productDescription}
+    Audience: ${data.targetAudience}
+    Platform: ${data.platform}
+    Location: ${data.city}, ${data.country}
+    Goal: ${data.goal}
+    Tone: ${data.tone}
+    USPs: ${data.uniqueSellingPoints}
+    CTA: ${data.callToAction}
+  `;
+
+  const response = await ai.models.generateContent({
+    model,
+    contents: prompt,
+    config: {
+      tools: [{ googleSearch: {} }],
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          strategySummary: { type: Type.STRING },
+          marketResearch: {
+            type: Type.OBJECT,
+            properties: {
+              localAreas: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING, description: "Neighborhood, town, or area name with zip code if available" },
+                    reason: { type: Type.STRING, description: "Strategic reason for targeting this specific block or area" }
+                  }
+                }
+              },
+              competitors: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING },
+                    strategy: { type: Type.STRING, description: "Observed marketing hook or perceived strategy" }
+                  }
+                }
+              },
+              audienceTargeting: {
+                type: Type.OBJECT,
+                properties: {
+                  interests: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  demographics: { type: Type.STRING, description: "Age range, gender, and behavioral status" }
+                }
+              }
+            }
+          },
+          options: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                id: { type: Type.STRING },
+                focusKeyword: { type: Type.STRING, description: "The single specific keyword/hook this option is built around" },
+                headline: { type: Type.STRING },
+                primaryText: { type: Type.STRING },
+                description: { type: Type.STRING },
+                ctaText: { type: Type.STRING },
+                reasoning: { type: Type.STRING },
+                keywords: { type: Type.ARRAY, items: { type: Type.STRING } }
+              },
+              required: ["id", "focusKeyword", "headline", "primaryText", "description", "ctaText", "reasoning", "keywords"]
+            }
+          }
+        }
+      },
+      thinkingConfig: { thinkingBudget: 12000 }
+    }
+  });
+
+  try {
+    return JSON.parse(response.text) as GenerationResult;
+  } catch (error) {
+    console.error("Failed to parse AI response", error);
+    throw new Error("Local research failed to produce structured data. Try being more specific with the city name.");
+  }
+};
