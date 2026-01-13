@@ -19,6 +19,11 @@ export const generateAdCopy = async (data: CampaignData): Promise<GenerationResu
     LOCAL RESEARCH TASK:
     - Search for high-intent areas in ${data.city}, ${data.country} relevant to ${data.targetAudience}.
     - Find specific neighborhoods, sub-sectors, and posh or commercial hubs (e.g., if Karachi, search for specific phases in DHA, specific blocks in North Nazimabad, etc.).
+    - DIVIDE AREAS INTO TIERS:
+      1. High Potential: Core commercial hubs or high-income residential areas where conversion is highest.
+      2. Medium Potential: Emerging neighborhoods or business districts with moderate competition.
+      3. Low Potential: Broader reaching areas for brand awareness or budget-friendly targeting.
+    - provide as many specific areas as possible (at least 10-12 distinct areas/neighborhoods).
     - Identify actual local competitors currently operating in ${data.city} for "${data.productDescription}". Analyze their visible hook or selling point.
 
     CAMPAIGN PARAMETERS:
@@ -51,9 +56,11 @@ export const generateAdCopy = async (data: CampaignData): Promise<GenerationResu
                 items: {
                   type: Type.OBJECT,
                   properties: {
-                    name: { type: Type.STRING, description: "Neighborhood, town, or area name with zip code if available" },
-                    reason: { type: Type.STRING, description: "Strategic reason for targeting this specific block or area" }
-                  }
+                    name: { type: Type.STRING, description: "Neighborhood, town, or area name" },
+                    reason: { type: Type.STRING, description: "Strategic reason for targeting this specific block or area" },
+                    potential: { type: Type.STRING, enum: ["High", "Medium", "Low"] }
+                  },
+                  required: ["name", "reason", "potential"]
                 }
               },
               competitors: {
@@ -94,7 +101,7 @@ export const generateAdCopy = async (data: CampaignData): Promise<GenerationResu
           }
         }
       },
-      thinkingConfig: { thinkingBudget: 12000 }
+      thinkingConfig: { thinkingBudget: 15000 }
     }
   });
 

@@ -32,6 +32,7 @@ export interface MarketResearch {
   localAreas: {
     name: string;
     reason: string;
+    potential: 'High' | 'Medium' | 'Low';
   }[];
   competitors: {
     name: string;
