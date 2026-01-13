@@ -98,10 +98,15 @@ export const generateAdCopy = async (data: CampaignData): Promise<GenerationResu
     }
   });
 
+  const text = response.text;
+  if (!text) {
+    throw new Error("Local research failed. The AI returned an empty response.");
+  }
+
   try {
-    return JSON.parse(response.text) as GenerationResult;
+    return JSON.parse(text) as GenerationResult;
   } catch (error) {
     console.error("Failed to parse AI response", error);
-    throw new Error("Local research failed to produce structured data. Try being more specific with the city name.");
+    throw new Error("Research results were not in the expected format. Please try again.");
   }
 };
